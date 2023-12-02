@@ -25,6 +25,9 @@ cprint () {
 # Commands
 #
 cmd_push() {
+    cprint $YELLOW "fetching latest data"
+    git fetch --all
+
     # TODO: detect remote from current stream
     local remote=origin
     local current=$(git rev-parse --abbrev-ref HEAD)
@@ -52,6 +55,8 @@ cmd_push() {
     cprint $YELLOW "restore $GREEN$current"
     git reset "$current_hash"
 
+    # TODO: make final check before push: remote target should not be changed since backup
+
     cprint $YELLOW "force push $GREEN$current"
     git push -f 
 
@@ -60,6 +65,9 @@ cmd_push() {
 
 
 cmd_pull() {
+    cprint $YELLOW "fetching latest data"
+    git fetch --all
+
     # TODO: detect remote from current stream
     local remote=origin
     local current=$(git rev-parse --abbrev-ref HEAD)
