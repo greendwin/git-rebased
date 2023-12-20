@@ -6,19 +6,23 @@ Push rebased branch storing migration history to backup branch.
 
 ## Roadmap
 
-### MS-0 - prototype
+### Features
 
-- [x] rework to script to commands `git rebased push`, `git rebased pull`, etc.
-- [x] add command `git rebased pull` that rebases current branch on top of `backup~`
+- [!] add command `git rebased rebase` for rebasing local branch onto other rebased branch
+- [ ] add command `git rebased cleanup` that removes unused backup branches (without matching original branch)
+- [ ] rewrite this to python and make installable from `pipx`
 
-### MS-1 - v0.1.0
 
-- [ ] move roadmap out of README.md
+### Documentation and deployment
+
+write documentaion on each operation with examples:
+- [ ] `push`
+- [ ] `pull`
+- [ ] ...?
+
+other:
 - [ ] write detailed description
 - [ ] add installation instructions
+- [ ] move roadmap out of `README.md`
 - [ ] publish on github
 
-### Backlog
-
-- [ ] add command `git rebased cleanup` that removes unused backup branches (without matching original branch)
-- [ ] TBD: rewrite this to python and make installable from `pipx`

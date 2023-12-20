@@ -20,6 +20,25 @@ cprint () {
     echo -e "$color${message//$RESET/$color}${ENDCOLOR}"
 }
 
+check_num_args() {
+    local expected=$1
+    local actual=$2
+    if [[ $actual -ne $expected ]]; then
+        cprint $RED ""
+        cprint $RED "Wrong arguments count: $actual"
+        usage 1 && exit -1
+    fi
+}
+
+check_branch_exists() {
+    local remote_branch=$1
+
+    if ! git rev-parse --verify --quiet "$remote_branch"; then
+        cprint $RED "remote branch $GREEN$remote_branch$RED was not found"
+        exit -1
+    fi
+}
+
 
 #
 # Commands
@@ -28,7 +47,7 @@ cmd_push() {
     cprint $YELLOW "fetching latest data"
     git fetch --all
 
-    # TODO: detect remote from current stream
+    # FIXME: detect remote from current stream
     local remote=origin
     local current=$(git rev-parse --abbrev-ref HEAD)
     local backup="backup/$current"
@@ -55,7 +74,7 @@ cmd_push() {
     cprint $YELLOW "restore $GREEN$current"
     git reset "$current_hash"
 
-    # TODO: make final check before push: remote target should not be changed since backup
+    # FIXME: make final check before push: remote target should not be changed since backup
 
     cprint $YELLOW "force push $GREEN$current"
     git push -f 
@@ -64,32 +83,56 @@ cmd_push() {
 }
 
 
+rebase_using_backup() {
+    local remote=$1
+    local target_name=$2
+    local target="$remote/$target_name"
+    local target_backup="$remote/backup/$target_name"
+
+    check_branch_exists "$target_backup"
+
+    cprint $YELLOW "rebase on top of $GREEN$target_backup"
+    git rebase "$target_backup"
+
+    cprint $YELLOW "step back onto mainline"
+    git rebase "$target_backup" --onto "$target_backup~"
+
+    cprint $YELLOW "rebase to $GREEN$target"
+    git rebase "$target"
+}
+
+
 cmd_pull() {
     cprint $YELLOW "fetching latest data"
     git fetch --all
 
-    # TODO: detect remote from current stream
+    # FIXME: detect remote from current stream
     local remote=origin
-    local current=$(git rev-parse --abbrev-ref HEAD)
-    local backup="backup/$current"
-    local current_hash=$(git rev-parse HEAD)
 
+    local current=$(git rev-parse --abbrev-ref HEAD)
+    local current_hash=$(git rev-parse HEAD)
     cprint $YELLOW "current hash is $BLUE$current_hash"
 
-    if ! git rev-parse --verify --quiet "$remote/$backup"; then
-        cprint $RED "backup branch $GREEN$remote/$backup$RESET was not found"
-        exit -1
-    fi
+    rebase_using_backup $remote $current
 
-    cprint $YELLOW "rebase on top of $GREEN$remote/$backup"
-    # merge both backup and main branch (they can differ)
-    git rebase "$remote/$backup"
+    cprint $GREEN "done."
+}
 
-    cprint $YELLOW "move to mainline"
-    git rebase "$remote/$backup" --onto "$remote/$backup~"
 
-    cprint $YELLOW "rebase to $GREEN$remote/$current"
-    git rebase "$remote/$current"
+cmd_rebase() {
+    cprint $YELLOW "fetching latest data"
+    git fetch --all
+
+    local target=$1
+
+    # FIXME: detect remote from current stream
+    local remote=origin
+
+    local current=$(git rev-parse --abbrev-ref HEAD)
+    local current_hash=$(git rev-parse HEAD)
+    cprint $YELLOW "current hash is $BLUE$current_hash"
+
+    rebase_using_backup $remote $target
 
     cprint $GREEN "done."
 }
@@ -110,8 +153,9 @@ usage() {
 
     cprint $color ""
     cprint $color "Usage:"
-    cprint $color "    git rebased push         # force-push rebased commits"
-    cprint $color "    git rebased pull         # pull rebased upstream commits"
+    cprint $color "    git rebased push             # force-push rebased commits"
+    cprint $color "    git rebased pull             # pull rebased upstream commits"
+    cprint $color "    git rebased rebase TARGET    # rebase current branch onto other rebased branch"
 }
 
 POS_ARGS=()
@@ -143,20 +187,17 @@ if [[ $# -eq 0 ]]; then
     usage && exit 0
 fi
 
-if [[ $# -ne 1 ]]; then
+if [[ "$1" == "push" ]]; then
+    check_num_args 1 $#
+    cmd_push
+elif [[ "$1" == "pull" ]]; then
+    check_num_args 1 $#
+    cmd_pull
+elif [[ "$1" == "rebase" ]]; then
+    check_num_args 2 $#
+    cmd_rebase $2
+else
     cprint $RED ""
-    cprint $RED "Wrong arguments count: $#"
+    cprint $RED "Invalid command: $1"
     usage 1 && exit -1
 fi
-
-if [[ "$1" == "push" ]]; then
-    cmd_push
-    exit
-elif [[ "$1" == "pull" ]]; then
-    cmd_pull
-    exit
-fi
-
-cprint $RED ""
-cprint $RED "Invalid command: $1"
-usage 1 && exit -1
