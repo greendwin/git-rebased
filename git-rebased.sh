@@ -77,7 +77,7 @@ cmd_push() {
     # FIXME: make final check before push: remote target should not be changed since backup
 
     cprint $YELLOW "force push $GREEN$current"
-    git push -f 
+    git push --force-with-lease
 
     cprint $GREEN "done."
 }
