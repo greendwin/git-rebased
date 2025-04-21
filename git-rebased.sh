@@ -66,7 +66,7 @@ cmd_push() {
 
     cprint $YELLOW "merge $GREEN$remote/$current$RESET and $GREEN$remote/$backup"
     # merge both backup and main branch (they can differ)
-    git merge -s ours "$remote/$current" "$remote/$backup" --allow-unrelated-histories
+    git merge -s ours "$remote/$current" "$remote/$backup" --allow-unrelated-histories --no-edit
 
     cprint $YELLOW "push $GREEN$backup"
     git push origin "$current:$backup"
